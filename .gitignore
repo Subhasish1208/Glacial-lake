@@ -1,0 +1,16 @@
+# Checkpoint and weight files (large binaries)
+*.pth
+*.pt
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local config and temp files
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.log
+
+# Temp generation files (if any)
+create_doc.py
