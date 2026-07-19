@@ -1,21 +1,34 @@
-# Glacial Lake Segmentation using DBCNet (vs. DeepLabV3)
+# Glacial Lake Segmentation: DBCNet vs. VMambaSeg vs. DeepLabV3
 
-A deep learning project comparing a state-of-the-art **DBCNet** (Dual-Branch CNN-Mamba Network) architecture against a standard **DeepLabV3** baseline for segmenting glacial lakes from Sentinel-2 optical imagery.
+A deep learning project comparing state-of-the-art **Mamba-based architectures** (**VMambaSeg** and **DBCNet**) against a standard **DeepLabV3** ResNet50 baseline for segmenting glacial lakes from Sentinel-2 optical imagery. 
 
 Monitoring glacial lakes is crucial for early warning systems against Glacial Lake Outburst Floods (GLOFs) and analyzing climate change impacts in high-mountain regions (like the Himalayas).
 
 ---
 
 ## 🌟 Key Highlights
-* **DBCNet Performance:** Achieved a **93.03% mIoU** and **96.25% F1-score** on unseen test data.
-* **DeepLabV3 Comparison:** Outperformed standard DeepLabV3 by **+5.43% mIoU** and **+4.01% F1-score**.
+* **VMambaSeg Performance:** Achieved a state-of-the-art **93.65% mIoU** and **96.62% F1-score** on unseen test data.
+* **DBCNet Performance:** Achieved a **93.03% mIoU** and **96.25% F1-score**.
+* **Mamba vs. CNNs:** Both Mamba-based networks significantly outperform the standard DeepLabV3 CNN baseline (**+6.05%** and **+5.43% mIoU** respectively).
 * **GPU Acceleration:** Fully optimized and trained using PyTorch with CUDA 12.6 support on an NVIDIA RTX 2050.
+* **Windows Portability:** Implemented using a pure PyTorch State-Space scanning approximation, eliminating complex C++/CUDA kernel compilation issues (`mamba-ssm`) on Windows.
 
 ---
 
-## 🛠️ The Architecture (DBCNet)
+## 🛠️ Model Architectures
 
-DBCNet is a "dual-branch" network, meaning it processes the input satellite image in two different ways at the same time to get the best of both worlds:
+This project compares three models that process satellite imagery using different semantic levels:
+
+### 1. VMambaSeg (Pure State-Space Encoder-Decoder)
+* **Goal:** Employs a hierarchical State-Space backbone for feature extraction, paired with a standard skip-connection decoder.
+* **Encoder:** A 4-stage hierarchical VMamba (VSSM) encoder. Input resolution is patch-embedded down to $128\times 128$. Each stage processes features using Visual State Space blocks (`VSSBlock`) which utilize a 2D selective scan approximation to capture long-range contextual relationships globally with linear complexity.
+* **Decoder:** A U-Net style decoder that takes skip connections from stages 1, 2, and 3, upsamples the features via transpose convolutions, and fuses them to rebuild the spatial boundary details.
+
+### 2. DBCNet (CNN-Mamba Hybrid)
+* **Goal:** Merges spatial details (from a CNN branch) with global landscape context (from a Mamba branch).
+* **Spatial Branch (CrossNet):** Uses `CrossBlock`s executing standard 3x3, horizontal 1x9, and vertical 9x1 convolutions in parallel to capture fine edges in multiple directions.
+* **Context Branch (VMamba):** Captures the big picture using `VSSBlock`s to establish connections between distant parts of the image.
+* **Fusion & Decoder:** Employs a Feature Fusion Module (FFM) with channel attention and a Cross-aware Mamba Module (CMM) decoder.
 
 ```
                   ┌───► [Spatial Branch: CrossNet] ────┐
@@ -26,58 +39,45 @@ DBCNet is a "dual-branch" network, meaning it processes the input satellite imag
                          (Captures global structure)
 ```
 
-### 1. Spatial Branch (CrossNet)
-* **Goal:** Focuses on textures, edges, and small-scale details.
-* **How it works:** Uses `CrossBlock`s. Unlike regular 3x3 convolutions, a `CrossBlock` runs three convolutions in parallel: a standard 3x3, a horizontal 1x9, and a vertical 9x1. Combining these allows the model to capture features in multiple directions and shapes without losing boundary accuracy.
-
-### 2. Context Branch (VMamba / SS2D)
-* **Goal:** Focuses on the "big picture" (the global layout and landscape context).
-* **How it works:** Utilizes Visual State Space blocks (`VSSBlock`). It approximates the 2D Selective Scan (SS2D) mechanism from Mamba. This scans the image in multiple directions to establish connections between distant parts of the image with linear time complexity.
-* *Note: To make installation hassle-free and avoid Windows compilation errors, we implemented a custom pure-PyTorch `SS2D_Approximation`.*
-
-### 3. Feature Fusion Module (FFM)
-* Combines the features from the Spatial (CNN) branch and Context (Mamba) branch.
-* Uses **Squeeze-and-Excitation (SE) Attention** to automatically decide which features are more important and scale them accordingly.
-
-### 4. Decoder (CMM)
-* Uses **Cross-aware Mamba Module (CMM)** blocks to scale the low-resolution features back up to the original 512x512 image size while retaining edge details.
+### 3. DeepLabV3 ResNet50 (CNN Baseline)
+* **Goal:** A standard fully-convolutional comparison baseline.
+* **Details:** Uses ResNet50 for feature extraction and Atrous Spatial Pyramid Pooling (ASPP) to expand the receptive field using dilated convolutions.
 
 ---
 
 ## 📏 Feature Map Dimensions (Shapes)
-Here is how the shape of a single batch of images (`[Batch, Channels, Height, Width]`) flows through DBCNet:
 
-1. **Input:** `[B, 3, 512, 512]` (RGB imagery)
-2. **Layer 1:** `[B, 16, 512, 512]`
-3. **Layer 2 (Downsample):** `[B, 32, 256, 256]`
-4. **Layer 3 (Downsample & FFM):** `[B, 64, 128, 128]`
-5. **Layer 4 (Downsample & FFM):** `[B, 128, 64, 64]`
-6. **Layer 5 (Downsample & FFM):** `[B, 256, 32, 32]`
-7. **Layer 6 (Mamba Context only):** `[B, 512, 16, 16]`
-8. **Decoder (Upsampling steps back to input size):**
-   * Up-level 5: `[B, 256, 32, 32]`
-   * Up-level 4: `[B, 128, 64, 64]`
-   * Up-level 3: `[B, 64, 128, 128]`
-   * Up-level 2: `[B, 32, 256, 256]`
-   * Up-level 1: `[B, 16, 512, 512]`
-9. **Output:** `[B, 1, 512, 512]` (Binary segment mask where `1` = Glacial Lake, `0` = Background)
+### VMambaSeg Tensor Flow
+1. **Input:** `[B, 3, 512, 512]` (Sentinel-2 RGB bands)
+2. **Patch Embed:** `[B, 64, 128, 128]` (Stage 1 Skip Connection)
+3. **Stage 2 (Downsample):** `[B, 128, 64, 64]` (Stage 2 Skip Connection)
+4. **Stage 3 (Downsample):** `[B, 256, 32, 32]` (Stage 3 Skip Connection)
+5. **Stage 4 (Downsample):** `[B, 512, 16, 16]` (Bottleneck)
+6. **Decoder Steps:**
+   * Up 3 (Concat with Stage 3 Skip): `[B, 512, 32, 32]` -> Conv -> `[B, 256, 32, 32]`
+   * Up 2 (Concat with Stage 2 Skip): `[B, 256, 64, 64]` -> Conv -> `[B, 128, 64, 64]`
+   * Up 1 (Concat with Stage 1 Skip): `[B, 128, 128, 128]` -> Conv -> `[B, 64, 128, 128]`
+7. **Final Upsampling:**
+   * Up to `[B, 32, 256, 256]` -> Conv -> `[B, 32, 256, 256]`
+   * Up to `[B, 16, 512, 512]` -> Conv -> `[B, 16, 512, 512]`
+8. **Output:** `[B, 1, 512, 512]` (Glacial Lake Segment Mask)
 
 ---
 
-## 📊 Evaluation Results (Test Set)
+## 📊 Comparative Evaluation Results (Test Set)
 
-We split the dataset into 70% Training, 15% Validation, and 15% Testing. Both models were trained for 80 epochs with identical hyperparameters (AdamW, PolyLR, Warmup) on the GPU.
+We split the dataset into 70% Training (287 samples), 15% Validation (63 samples), and 15% Testing (63 samples) deterministically using saved split indices. All models were trained for 80 epochs with identical hyperparameters (AdamW, PolyLR, Warmup) on the RTX 2050 GPU.
 
-| Model | Precision | Recall | F1-Score | mIoU |
-| :--- | :---: | :---: | :---: | :---: |
-| **DBCNet (Ours)** | **95.34%** | **97.43%** | **96.25%** | **93.03%** |
-| **DeepLabV3 (Baseline)** | 91.39% | 95.11% | 92.24% | 87.60% |
-| **Difference** | **+3.95%** | **+2.32%** | **+4.01%** | **+5.43%** |
+| Model | Precision | Recall | F1-Score | mIoU | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **VMambaSeg (Ours)** | **96.29%** | 97.12% | **96.62%** | **93.65%** | **Best Performance** |
+| **DBCNet (CNN-Mamba)** | 95.34% | **97.43%** | 96.25% | 93.03% | Strong Runner-Up |
+| **DeepLabV3 ResNet50** | 91.39% | 95.11% | 92.24% | 87.60% | Baseline |
 
-### Visual Comparisons
-The comparison results saved in `output_visuals/comparison_results.png` show:
-* **DBCNet (Red Overlay)** cleanly matches the boundaries and successfully isolates smaller lakes.
-* **DeepLabV3 (Blue Overlay)** occasionally creates fragmented components or over-segments muddy/shadowy terrains.
+### Key Conclusions:
+* **VMambaSeg achieves the highest boundary accuracy (93.65% mIoU),** representing a **+0.62%** increase over DBCNet and a **+6.05%** improvement over the DeepLabV3 CNN baseline.
+* **Higher Precision:** VMambaSeg suppresses false-positive noise from mountain shadows, clouds, and snow patches, reaching **96.29% Precision**.
+* **Visual Verification:** Visual overlays show that VMambaSeg traces intricate lake edges and handles small isolated lakes with high structural integrity compared to DeepLabV3 which tends to fragment.
 
 ---
 
@@ -90,53 +90,68 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install numpy albumentations pillow tqdm matplotlib
 ```
 
-### 2. Dataset
-Prepare your dataset. The images and ground truth masks should be located in a dataset directory containing `images` and `masks` folders. Update the `data_dir` path in the scripts to point to your directory.
+### 2. Dataset Setup
+Ensure your Sentinel-2 dataset images and ground truth masks are located in a folder structure like:
+```
+glacial-lake-dataset/
+├── images/     # 400x400 JPG/PNG images
+└── masks/      # 400x400 ground truth labels (binary 0/255)
+```
+Update the `data_dir` variable in the training scripts to point to this directory.
 
-### 3. Data Audit & Splits
-Run the audit script to check dimensions, compute global mean/std for normalizations, and generate the dataset splits:
+### 3. Initialize Splits
+Run the audit script to check data integrity, compute normalization parameters, and save the train/val/test splits:
 ```bash
 python data_audit.py
 ```
 
-### 4. Training
-To train the architectures on your GPU:
+### 4. Model Training
+Run the training scripts for the respective models:
 ```bash
-# To train DBCNet
+# Train VMambaSeg (Recommended)
+python train_vmamba.py
+
+# Train DBCNet
 python train.py
 
-# To train DeepLabV3
+# Train DeepLabV3 ResNet50
 python train_deeplabv3.py
 ```
 
-### 5. Evaluation & Visualization
-To generate test set statistics and comparative overlays:
+### 5. Model Evaluation & Visual Comparison
+Calculate test split metrics and save comparative visualization grids:
 ```bash
-# Evaluate test metrics
+# Evaluate model metrics
+python evaluate_vmamba.py
 python evaluate.py
 python evaluate_deeplabv3.py
 
-# Generate comparison image grids
-python visualize_compare.py
+# Generate comparison plots (DBCNet vs. DeepLabV3 vs. VMambaSeg)
+python visualize_compare_mamba.py
 ```
 
 ---
 
 ## 📂 Repository Structure
 ```
-├── dataset.py               # Custom PyTorch dataset & data augmentations
-├── dbcnet.py                # Full DBCNet model architecture
-├── deeplabv3_model.py       # DeepLabV3 baseline wrapper
-├── train.py                 # DBCNet training loop
-├── train_deeplabv3.py       # DeepLabV3 training loop
-├── evaluate.py              # DBCNet test set evaluation
-├── evaluate_deeplabv3.py    # DeepLabV3 test set evaluation
-├── visualize_compare.py     # Comparison visualization script
-├── data_audit.py            # Phase 0 dataset auditing & statistics
-└── README.md                # Project documentation
+├── dataset.py                  # PyTorch custom dataset and augmentations
+├── vmamba_seg.py               # VMambaSeg encoder-decoder architecture
+├── dbcnet.py                   # DBCNet CNN-Mamba hybrid architecture
+├── deeplabv3_model.py          # DeepLabV3 baseline model wrapper
+├── train_vmamba.py             # VMambaSeg training pipeline
+├── train.py                    # DBCNet training pipeline
+├── train_deeplabv3.py          # DeepLabV3 training pipeline
+├── evaluate_vmamba.py          # VMambaSeg test set evaluator
+├── evaluate.py                 # DBCNet test set evaluator
+├── evaluate_deeplabv3.py       # DeepLabV3 test set evaluator
+├── visualize_compare_mamba.py  # Generates 3-way comparative plots
+├── data_audit.py               # Pre-training dataset audit & splits generator
+├── experiment_results.txt      # Text record of final set metrics
+└── README.md                   # Project documentation
 ```
 
 ---
 
 ## 📜 References
 * Zhang, J. et al. "Dual-branch crack segmentation network with multi-shape kernel based on convolutional neural network and Mamba (DBCNet)." *Engineering Applications of Artificial Intelligence*, 150 (2025) 110536.
+* Official VMamba: Visual State Space Model (VSSM) codebase approximation.
