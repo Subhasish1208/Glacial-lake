@@ -1,4 +1,5 @@
 import os
+os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
 import json
 import numpy as np
 from PIL import Image
