@@ -35,6 +35,7 @@ def run_experiment(args):
     ).to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    scaler = torch.amp.GradScaler('cuda')
 
     total_iters = args.epochs * len(train_loader)
     warmup_iters = 4 * len(train_loader)
@@ -56,10 +57,12 @@ def run_experiment(args):
         for images, masks in train_loader:
             images, masks = images.to(device), masks.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, masks)
-            loss.backward()
-            optimizer.step()
+            with torch.amp.autocast('cuda'):
+                outputs = model(images)
+                loss = criterion(outputs, masks)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             scheduler.step()
             train_loss += loss.item()
 
@@ -71,8 +74,9 @@ def run_experiment(args):
         with torch.no_grad():
             for images, masks in val_loader:
                 images, masks = images.to(device), masks.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, masks)
+                with torch.amp.autocast('cuda'):
+                    outputs = model(images)
+                    loss = criterion(outputs, masks)
                 val_loss += loss.item()
 
                 p, r, f, iou = calculate_metrics(outputs, masks)
@@ -102,7 +106,8 @@ def run_experiment(args):
     with torch.no_grad():
         for images, masks in test_loader:
             images, masks = images.to(device), masks.to(device)
-            outputs = model(images)
+            with torch.amp.autocast('cuda'):
+                outputs = model(images)
             p, r, f, iou = calculate_metrics(outputs, masks)
             test_prec += p
             test_rec += r

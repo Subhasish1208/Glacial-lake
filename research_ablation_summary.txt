@@ -1,50 +1,66 @@
-=== MARKDOWN ABLATION TABLE ===
+=== MARKDOWN FEATURE MATRIX ABLATION TABLE ===
 
-| Experiment / Combination | P1 (Spatial) | P2 (Context) | P3 (Fusion) | P4 (Decoder) | Loss Function | Precision (%) | Recall (%) | F1-Score (%) | mIoU (%) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **phase1_1a** | 1a | v1 | v1 | v1 | BCE+Dice | 93.88 | 96.86 | 94.94 | **91.20** |
-| **phase1_1b** | 1b | v1 | v1 | v1 | BCE+Dice | 93.82 | 97.08 | 94.99 | **91.24** |
-| **phase1_1ab** | 1ab | v1 | v1 | v1 | BCE+Dice | 95.04 | 97.22 | 95.98 | **92.74** |
-| **phase2_2a** | 1ab | 2a | v1 | v1 | BCE+Dice | 96.01 | 96.75 | 96.29 | **93.08** |
-| **phase2_2b** | 1ab | 2b | v1 | v1 | BCE+Dice | 95.59 | 97.17 | 96.26 | **93.07** |
-| **phase2_2ab** | 1ab | 2ab | v1 | v1 | BCE+Dice | 96.51 | 97.02 | 96.71 | **93.80** |
-| **phase3_3a** | 1ab | 2ab | 3a | v1 | BCE+Dice | 95.70 | 97.72 | 96.60 | **93.61** |
-| **phase3_3b** | 1ab | 2ab | 3b | v1 | BCE+Dice | 94.82 | 97.33 | 95.79 | **92.36** |
-| **phase3_3ab** | 1ab | 2ab | 3ab | v1 | BCE+Dice | 95.08 | 97.88 | 96.30 | **93.19** |
-| **phase4_4_1** | 1ab | 2ab | 3a | 4.1 | BCE+Dice | 92.52 | 97.44 | 93.92 | **90.44** |
-| **phase4_4_2** | 1ab | 2ab | 3a | 4.2 | BCE+Dice | 92.71 | 97.68 | 94.08 | **90.69** |
-| **phase4_4_3** | 1ab | 2ab | 3a | 4.3 | BCE+Dice | 94.58 | 96.88 | 95.40 | **91.81** |
-| **phase4_all** | 1ab | 2ab | 3a | 4all | BCE+Dice | 93.36 | 97.83 | 94.52 | **91.45** |
-| **phase5_5_1** | 1ab | 2ab | 3a | v1 | BCE+Dice+clDice | 94.28 | 98.52 | 96.22 | **93.00** |
-| **phase5_5_2** | 1ab | 2ab | 3a | v1 | BCE+Dice+Bound | 93.45 | 97.26 | 94.32 | **91.11** |
-| **phase5_all** | 1ab | 2ab | 3a | v1 | BCE+Dice+Bound+clDice | 91.79 | 98.09 | 93.84 | **90.29** |
+| Experiment | Strip Conv (1a) | Hybrid Path (1b) | Wavelet Scan (2a) | Wavelet Patch (2b) | ECA-FFM (3a) | Spatial Gate (3b) | Prog CMM (4) | clDice Loss | Boundary Loss | Precision (%) | Recall (%) | F1-Score (%) | mIoU (%) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **phase1_1a** | ✓ | - | - | - | - | - | - | - | - | 93.88 | 96.86 | 94.94 | **91.20** |
+| **phase1_1b** | - | ✓ | - | - | - | - | - | - | - | 93.82 | 97.08 | 94.99 | **91.24** |
+| **phase1_1ab** | ✓ | ✓ | - | - | - | - | - | - | - | 95.04 | 97.22 | 95.98 | **92.74** |
+| **phase2_2a** | ✓ | ✓ | ✓ | - | - | - | - | - | - | 96.01 | 96.75 | 96.29 | **93.08** |
+| **phase2_2b** | ✓ | ✓ | - | ✓ | - | - | - | - | - | 95.59 | 97.17 | 96.26 | **93.07** |
+| **phase2_2ab** | ✓ | ✓ | ✓ | ✓ | - | - | - | - | - | 96.51 | 97.02 | 96.71 | **93.80** |
+| **phase3_3a** | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - | - | 95.70 | 97.72 | 96.60 | **93.61** |
+| **phase3_3b** | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | - | 94.82 | 97.33 | 95.79 | **92.36** |
+| **phase3_3ab** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - | 95.08 | 97.88 | 96.30 | **93.19** |
+| **phase4_4_1** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 92.52 | 97.44 | 93.92 | **90.44** |
+| **phase4_4_2** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 92.71 | 97.68 | 94.08 | **90.69** |
+| **phase4_4_3** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 94.58 | 96.88 | 95.40 | **91.81** |
+| **phase4_all** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 93.36 | 97.83 | 94.52 | **91.45** |
+| **phase5_5_1** | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | ✓ | - | 94.28 | 98.52 | 96.22 | **93.00** |
+| **phase5_5_2** | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - | ✓ | 93.45 | 97.26 | 94.32 | **91.11** |
+| **phase5_all** | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | ✓ | ✓ | 91.79 | 98.09 | 93.84 | **90.29** |
+| **phase2_2.1** | ✓ | ✓ | - | - | - | - | - | - | - | 95.96 | 97.18 | 96.49 | **93.41** |
+| **phase2_2.2** | ✓ | ✓ | - | - | - | - | - | - | - | 96.38 | 96.44 | 96.29 | **93.06** |
+| **phase2_2.3** | ✓ | ✓ | - | - | - | - | - | - | - | 96.70 | 96.67 | 96.60 | **93.59** |
+| **phase2_2.1_2.2** | ✓ | ✓ | - | - | - | - | - | - | - | 95.35 | 97.72 | 96.37 | **93.25** |
+| **phase4_4.2_only** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 92.19 | 97.83 | 93.86 | **90.29** |
+| **phase4_4.3_only** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 92.60 | 97.85 | 94.13 | **90.78** |
+| **phase4_4.1_4.3** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 95.83 | 97.19 | 96.39 | **93.31** |
+| **phase4_4.2_4.3** | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - | - | 92.37 | 97.45 | 93.78 | **90.13** |
 
-=== LATEX ABLATION TABLE FOR PAPER ===
+=== LATEX FEATURE MATRIX ABLATION TABLE FOR RESEARCH PAPER ===
 
 \begin{table*}[t]
 \centering
-\caption{Phase-by-phase ablation study of WS-DBNet architectural components and loss functions on the Glacial Lake Segmentation test split.}
-\label{tab:ablation_results}
-\begin{tabular}{l c c c c c c c c c}
+\caption{Full Architectural Feature Matrix Ablation Study of WS-DBNet on the Glacial Lake Segmentation test split.}
+\label{tab:ablation_tick_matrix}
+\begin{tabular}{l c c c c c c c c c c c c c}
 \hline
-\textbf{Model / Experiment} & \textbf{Spatial} & \textbf{Context} & \textbf{Fusion} & \textbf{Decoder} & \textbf{Loss} & \textbf{Prec (\%)} & \textbf{Rec (\%)} & \textbf{F1 (\%)} & \textbf{mIoU (\%)} \\
+\textbf{Experiment} & \textbf{Strip Conv (1a)} & \textbf{Hybrid Path (1b)} & \textbf{Wavelet Scan (2a)} & \textbf{Wavelet Patch (2b)} & \textbf{ECA-FFM (3a)} & \textbf{Spatial Gate (3b)} & \textbf{Prog CMM (4)} & \textbf{clDice Loss} & \textbf{Boundary Loss} & \textbf{Prec (\%)} & \textbf{Rec (\%)} & \textbf{F1 (\%)} & \textbf{mIoU (\%)} \\
 \hline
-phase1\_1a & 1a & v1 & v1 & v1 & BCE+Dice & 93.88 & 96.86 & 94.94 & \textbf{91.20} \\
-phase1\_1b & 1b & v1 & v1 & v1 & BCE+Dice & 93.82 & 97.08 & 94.99 & \textbf{91.24} \\
-phase1\_1ab & 1ab & v1 & v1 & v1 & BCE+Dice & 95.04 & 97.22 & 95.98 & \textbf{92.74} \\
-phase2\_2a & 1ab & 2a & v1 & v1 & BCE+Dice & 96.01 & 96.75 & 96.29 & \textbf{93.08} \\
-phase2\_2b & 1ab & 2b & v1 & v1 & BCE+Dice & 95.59 & 97.17 & 96.26 & \textbf{93.07} \\
-phase2\_2ab & 1ab & 2ab & v1 & v1 & BCE+Dice & 96.51 & 97.02 & 96.71 & \textbf{93.80} \\
-phase3\_3a & 1ab & 2ab & 3a & v1 & BCE+Dice & 95.70 & 97.72 & 96.60 & \textbf{93.61} \\
-phase3\_3b & 1ab & 2ab & 3b & v1 & BCE+Dice & 94.82 & 97.33 & 95.79 & \textbf{92.36} \\
-phase3\_3ab & 1ab & 2ab & 3ab & v1 & BCE+Dice & 95.08 & 97.88 & 96.30 & \textbf{93.19} \\
-phase4\_4\_1 & 1ab & 2ab & 3a & 4.1 & BCE+Dice & 92.52 & 97.44 & 93.92 & \textbf{90.44} \\
-phase4\_4\_2 & 1ab & 2ab & 3a & 4.2 & BCE+Dice & 92.71 & 97.68 & 94.08 & \textbf{90.69} \\
-phase4\_4\_3 & 1ab & 2ab & 3a & 4.3 & BCE+Dice & 94.58 & 96.88 & 95.40 & \textbf{91.81} \\
-phase4\_all & 1ab & 2ab & 3a & 4all & BCE+Dice & 93.36 & 97.83 & 94.52 & \textbf{91.45} \\
-phase5\_5\_1 & 1ab & 2ab & 3a & v1 & BCE+Dice+clDice & 94.28 & 98.52 & 96.22 & \textbf{93.00} \\
-phase5\_5\_2 & 1ab & 2ab & 3a & v1 & BCE+Dice+Bound & 93.45 & 97.26 & 94.32 & \textbf{91.11} \\
-phase5\_all & 1ab & 2ab & 3a & v1 & BCE+Dice+Bound+clDice & 91.79 & 98.09 & 93.84 & \textbf{90.29} \\
+phase1\_1a & \checkmark & - & - & - & - & - & - & - & - & 93.88 & 96.86 & 94.94 & \textbf{91.20} \\
+phase1\_1b & - & \checkmark & - & - & - & - & - & - & - & 93.82 & 97.08 & 94.99 & \textbf{91.24} \\
+phase1\_1ab & \checkmark & \checkmark & - & - & - & - & - & - & - & 95.04 & 97.22 & 95.98 & \textbf{92.74} \\
+phase2\_2a & \checkmark & \checkmark & \checkmark & - & - & - & - & - & - & 96.01 & 96.75 & 96.29 & \textbf{93.08} \\
+phase2\_2b & \checkmark & \checkmark & - & \checkmark & - & - & - & - & - & 95.59 & 97.17 & 96.26 & \textbf{93.07} \\
+phase2\_2ab & \checkmark & \checkmark & \checkmark & \checkmark & - & - & - & - & - & 96.51 & 97.02 & 96.71 & \textbf{93.80} \\
+phase3\_3a & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & - & - & - & 95.70 & 97.72 & 96.60 & \textbf{93.61} \\
+phase3\_3b & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & - & 94.82 & 97.33 & 95.79 & \textbf{92.36} \\
+phase3\_3ab & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & - & - & 95.08 & 97.88 & 96.30 & \textbf{93.19} \\
+phase4\_4\_1 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 92.52 & 97.44 & 93.92 & \textbf{90.44} \\
+phase4\_4\_2 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 92.71 & 97.68 & 94.08 & \textbf{90.69} \\
+phase4\_4\_3 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 94.58 & 96.88 & 95.40 & \textbf{91.81} \\
+phase4\_all & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 93.36 & 97.83 & 94.52 & \textbf{91.45} \\
+phase5\_5\_1 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & - & \checkmark & - & 94.28 & 98.52 & 96.22 & \textbf{93.00} \\
+phase5\_5\_2 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & - & - & \checkmark & 93.45 & 97.26 & 94.32 & \textbf{91.11} \\
+phase5\_all & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & - & \checkmark & \checkmark & 91.79 & 98.09 & 93.84 & \textbf{90.29} \\
+phase2\_2.1 & \checkmark & \checkmark & - & - & - & - & - & - & - & 95.96 & 97.18 & 96.49 & \textbf{93.41} \\
+phase2\_2.2 & \checkmark & \checkmark & - & - & - & - & - & - & - & 96.38 & 96.44 & 96.29 & \textbf{93.06} \\
+phase2\_2.3 & \checkmark & \checkmark & - & - & - & - & - & - & - & 96.70 & 96.67 & 96.60 & \textbf{93.59} \\
+phase2\_2.1\_2.2 & \checkmark & \checkmark & - & - & - & - & - & - & - & 95.35 & 97.72 & 96.37 & \textbf{93.25} \\
+phase4\_4.2\_only & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 92.19 & 97.83 & 93.86 & \textbf{90.29} \\
+phase4\_4.3\_only & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 92.60 & 97.85 & 94.13 & \textbf{90.78} \\
+phase4\_4.1\_4.3 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 95.83 & 97.19 & 96.39 & \textbf{93.31} \\
+phase4\_4.2\_4.3 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & - & \checkmark & - & - & 92.37 & 97.45 & 93.78 & \textbf{90.13} \\
 \hline
 \end{tabular}
 \end{table*}

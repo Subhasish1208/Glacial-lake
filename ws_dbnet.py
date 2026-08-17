@@ -222,7 +222,10 @@ class CMMBlockModular(nn.Module):
         self.ss2d = SS2D_Approximation(channels)
         self.dropout = nn.Dropout(0.1)
 
-        if ('4b' in variant or '4.3' in variant or '4all' in variant) and channels <= 64:
+        is_prog = any(k in variant for k in ['4b', '4.3', '4all', '4.1_4.3', '4.2_4.3'])
+        is_eca = any(k in variant for k in ['4.2', '4all', '4.2_4.3'])
+
+        if is_prog and channels <= 64:
             # Lightweight depthwise CMM for high resolution
             self.conv = nn.Sequential(
                 nn.Conv2d(channels, channels, 3, padding=1, groups=channels),
@@ -230,7 +233,7 @@ class CMMBlockModular(nn.Module):
                 nn.ReLU(inplace=True),
                 ECALayer(channels)
             )
-        elif ('4.2' in variant or '4all' in variant):
+        elif is_eca:
             # CMM with ECA gating
             self.conv = nn.Sequential(
                 nn.Conv2d(channels, channels, 3, padding=1),
@@ -273,7 +276,7 @@ class WS_DBNet(nn.Module):
         self.phase4 = phase4
         
         # Haar Wavelet module if Phase 2 enabled
-        if '2a' in phase2 or '2ab' in phase2:
+        if any(w in phase2 for w in ['2a', '2b', '2ab', '2.1', '2.2', '2.3']):
             self.dwt = HaarDWT2D()
             self.dwt_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
         else:
@@ -328,13 +331,13 @@ class WS_DBNet(nn.Module):
         self.dec3 = CMMBlockModular(base_c*4, variant=phase4)
 
         self.up2 = nn.ConvTranspose2d(base_c*4, base_c*2, kernel_size=2, stride=2)
-        if '4a' in phase4 or '4.1' in phase4 or '4.2' in phase4 or '4.3' in phase4 or '4b' in phase4 or '4all' in phase4:
+        if any(k in phase4 for k in ['4a', '4.1', '4.2', '4.3', '4b', '4all', '4.1_4.3', '4.2_4.3']):
             self.dec2 = CMMBlockModular(base_c*2, variant=phase4)
         else:
             self.dec2 = ConvBlock(base_c*2, base_c*2)
 
         self.up1 = nn.ConvTranspose2d(base_c*2, base_c, kernel_size=2, stride=2)
-        if '4a' in phase4 or '4.1' in phase4 or '4.2' in phase4 or '4.3' in phase4 or '4b' in phase4 or '4all' in phase4:
+        if any(k in phase4 for k in ['4a', '4.1', '4.2', '4.3', '4b', '4all', '4.1_4.3', '4.2_4.3']):
             self.dec1 = CMMBlockModular(base_c, variant=phase4)
         else:
             self.dec1 = ConvBlock(base_c, base_c)
