@@ -310,5 +310,18 @@
         "test_recall": 97.45,
         "test_f1": 93.78,
         "test_miou": 90.13
+    },
+    "phase_full_sfcd": {
+        "exp_name": "phase_full_sfcd",
+        "phase1": "1ab",
+        "phase2": "2.1",
+        "phase3": "3a",
+        "phase4": "4.1_4.3",
+        "use_boundary": false,
+        "use_cldice": false,
+        "test_precision": 93.08,
+        "test_recall": 97.6,
+        "test_f1": 94.25,
+        "test_miou": 90.96
     }
 }
